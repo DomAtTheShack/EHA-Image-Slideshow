@@ -1,0 +1,22 @@
+# This file now only defines the MongoDB service.
+# You can start the database with a single command: `docker-compose up`
+
+version: '3.8' # Specifies the version of the Docker Compose file format
+
+services:
+  # The MongoDB Database Service
+  mongo:
+    image: mongo:latest # Pulls the latest official MongoDB image from Docker Hub
+    ports:
+      # Maps port 27017 on your machine to port 27017 inside the container,
+      # so your manually-run backend can connect to it at 'localhost:27017'.
+      - "27017:27017"
+    volumes:
+      # This creates a 'named volume' to persist the database data.
+      # Even if you stop and remove the container, your data will still be there.
+      - mongodb_data:/data/db
+
+volumes:
+  # Defines the named volume used by the mongo service for data persistence
+  mongodb_data:
+

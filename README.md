@@ -4,7 +4,7 @@ Project Structure
 .
 ├── backend/              # Node.js API
 │   ├── models/
-│   │   └── configModel.js # Mongoose schema for images
+│   │   └── globalConfigModel.js # Mongoose schema for images
 │   ├── routes/
 │   │   └── displayRoutes.js # API routes for the display
 │   ├── .env.example      # Example environment variables

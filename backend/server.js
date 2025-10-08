@@ -3,7 +3,12 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const Config = require('./models/configModel');
+
+// --- Import all models ---
+const GlobalConfig = require('./models/globalConfigModel');
+const ImageList = require('./models/imageListModel');
+const Image = require('./models/imageModel');
+
 
 // Load environment variables from .env file
 dotenv.config();
@@ -16,45 +21,67 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // --- Middleware ---
-// Enable Cross-Origin Resource Sharing
 app.use(cors());
-// Enable parsing of JSON in request bodies
 app.use(express.json());
 
-// --- Helper function to create a default configuration if none exists ---
-// This is useful for the very first time the app is run with a new database.
-const seedDefaultConfig = async () => {
+// --- Helper function to seed the database with defaults ---
+const seedDefaultData = async () => {
     try {
-        const existingConfig = await Config.findOne();
-        if (!existingConfig) {
-            console.log('No config found. Seeding the database with a default one...');
-            const defaultConfig = new Config({
-                name: 'Default Display Config',
-                title: 'Welcome!',
-                images: [
-                    {
-                        url: 'https://placehold.co/1280x720/1a1a1a/ffffff?text=Setup+Complete!',
-                        credit: 'Please add your images in the admin panel.'
-                    }
-                ]
-            });
-            await defaultConfig.save();
-            console.log('Default config created successfully.');
-        } else {
-            console.log('Existing config found. Skipping seed.');
+        // Check if a global config already exists
+        const existingGlobalConfig = await GlobalConfig.findOne();
+        if (existingGlobalConfig) {
+            console.log('✅ Existing data found. Skipping database seed.');
+            return;
         }
+
+        console.log('🌱 No data found. Seeding the database with default values...');
+
+        // 1. Create some default individual images
+        const image1 = new Image({
+            url: 'https://placehold.co/1280x720/1a1a1a/ffffff?text=Image+One',
+            credit: 'First slide',
+            duration: 5 // 5 seconds
+        });
+        const image2 = new Image({
+            url: 'https://placehold.co/1280x720/4a4a4a/ffffff?text=Image+Two',
+            credit: 'Second slide' // This will use the global duration
+        });
+        await image1.save();
+        await image2.save();
+        console.log('...Default images created.');
+
+        // 2. Create a default image list that uses the images we just made
+        console.log("...Attempting to create ImageList with name: 'Default'"); // Added for debugging
+        const defaultImageList = new ImageList({
+            name: 'Default', // This line ensures the 'name' path is provided
+            images: [image1._id, image2._id] // Link to the images by their IDs
+        });
+        await defaultImageList.save();
+        console.log('...Default image list created successfully.');
+
+        // 3. Create the main global config
+        const defaultGlobalConfig = new GlobalConfig({
+            name: 'Global Display Config',
+            title: 'Welcome to the Display!',
+            globalSlideDuration: 8,
+            tempUnit: 'F'
+        });
+        await defaultGlobalConfig.save();
+        console.log('...Default global config created.');
+        console.log('Database seeding complete!');
+
+
     } catch (err) {
-        console.error('Error seeding default config:', err);
+        console.error('Error during database seeding:', err);
     }
 };
-
 
 // --- Database Connection ---
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('Successfully connected to MongoDB.');
-        // Once connected, we can check if we need to seed the database.
-        seedDefaultConfig();
+        // Once connected, seed the database.
+        seedDefaultData();
     })
     .catch(err => {
         console.error('Database connection error:', err);
@@ -62,7 +89,6 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
 // --- API Routes ---
-// All routes related to the display will be prefixed with /api/display
 app.use('/api/display', displayRoutes);
 
 
