@@ -37,5 +37,24 @@ router.get('/data', async (req, res) => {
     }
 });
 
+router.get('/updateGlobalConfig', async (req, res) => {
+    try {
+        // --- Step 1: Fetch the single global configuration document ---
+        const globalConfig = await GlobalConfig.findOne({});
+
+
+        // --- Error handling ---
+        if (!globalConfig) {
+            return res.status(404).json({ msg: 'Global configuration not found.' });
+        }
+
+        res.json(globalConfig);
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;
 
