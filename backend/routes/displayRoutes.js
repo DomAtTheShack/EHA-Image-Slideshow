@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-
+const { writeFileSync, readFileSync } = require('fs');
+3
 // Import all the models we need
 const GlobalConfig = require('../models/globalConfigModel');
 const ImageList = require('../models/imageListModel');
+const BASE_WEATHER_API = "https://api.weatherapi.com/v1/current.json"
 
 // @route   GET /api/display/data
 // @desc    Get the combined active display configuration (global settings + an image list)
@@ -38,22 +40,53 @@ router.get('/data', async (req, res) => {
 });
 
 router.get('/updateGlobalConfig', async (req, res) => {
-    try {
-        // --- Step 1: Fetch the single global configuration document ---
-        const globalConfig = await GlobalConfig.findOne({});
 
+    // --- Step 1: Fetch the single global configuration document ---
+        const globalConfig = await GlobalConfig.findOne({});
 
         // --- Error handling ---
         if (!globalConfig) {
-            return res.status(404).json({ msg: 'Global configuration not found.' });
+            return res.status(404).json({msg: 'Global configuration not found.'});
+        }
+        if (!process.env.WEATHER_API_KEY) {
+            return res.status(500).json({error: 'Weather API key is not configured on the server.'});
         }
 
-        res.json(globalConfig);
+    const today = new Date();
 
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
+        try {
+            const url = new URL(BASE_WEATHER_API);
+            const params = {
+                key: process.env.WEATHER_API_KEY,
+                q: globalConfig.get('weatherLocation').replace(' ', ''),
+                aqi: 'yes',
+            };
+
+            url.search = new URLSearchParams(params).toString();
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                // If the API returns an error, pass it along
+                throw new Error(`Weather API error! status: ${response.status}`);
+            }
+
+            const dateString = today.toDateString();
+            const filename = globalConfig.get('weatherLocation') + " " + dateString + " " + today.getHours() + "hr";
+
+            // Parse the JSON data from the successful response
+            const weatherData = await response.json();
+            const jsonString = JSON.stringify(weatherData, null, 2);
+
+            writeFileSync(`weather/${filename}.json`, jsonString);
+
+            // Send the weather data back to the client
+            res.json(weatherData);
+
+        } catch (error) {
+            // If anything goes wrong, log it and send an error response
+            console.error('Error fetching weather data:', error.message);
+            res.status(500).json({error: 'Failed to fetch weather data.'});
+        }
 });
 
 module.exports = router;

@@ -1,14 +1,15 @@
-// Import required packages
+// Import required packages using CommonJS 'require' syntax
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const fs = require('fs').promises; // For filesystem operations
+const path = require('path');     // For handling file paths
 
-// --- Import all models ---
+// Import the Mongoose models
 const GlobalConfig = require('./models/globalConfigModel');
 const ImageList = require('./models/imageListModel');
 const Image = require('./models/imageModel');
-
 
 // Load environment variables from .env file
 dotenv.config();
@@ -24,55 +25,80 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// --- Helper function to seed the database with defaults ---
-const seedDefaultData = async () => {
+// --- Startup Tasks Function (Cleanup & Seeding) ---
+const runStartupTasks = async () => {
     try {
-        // Check if a global config already exists
-        const existingGlobalConfig = await GlobalConfig.findOne();
-        if (existingGlobalConfig) {
-            console.log('✅ Existing data found. Skipping database seed.');
+        // --- Part 1: Clean up old weather files ---
+        const weatherDir = 'weather';
+        console.log(`🧹 Cleaning up old files in '${weatherDir}' directory...`);
+
+        // Ensure the directory exists to avoid errors on the very first run
+        await fs.mkdir(weatherDir, { recursive: true });
+        const files = await fs.readdir(weatherDir);
+
+        // Create a list of promises to delete all JSON files in parallel
+        const deletionPromises = files
+            .filter(file => path.extname(file) === '.json')
+            .map(file => fs.unlink(path.join(weatherDir, file)));
+
+        await Promise.all(deletionPromises);
+
+        if (deletionPromises.length > 0) {
+            console.log(`   - Deleted ${deletionPromises.length} JSON file(s).`);
+        } else {
+            console.log(`   - No JSON files found to delete.`);
+        }
+
+
+        // --- Part 2: Seed the database if it's empty ---
+        const configExists = await GlobalConfig.countDocuments() > 0;
+        if (configExists) {
+            console.log('✅ Config already exists. Skipping database seed.');
             return;
         }
 
         console.log('🌱 No data found. Seeding the database with default values...');
 
-        // 1. Create some default individual images
+        // 1. Create default images
         const image1 = new Image({
             url: 'https://placehold.co/1280x720/1a1a1a/ffffff?text=Image+One',
-            credit: 'First slide',
-            duration: 5 // 5 seconds
+            credit: 'First placeholder image',
+            duration: 5
         });
         const image2 = new Image({
-            url: 'https://placehold.co/1280x720/4a4a4a/ffffff?text=Image+Two',
-            credit: 'Second slide' // This will use the global duration
+            url: 'https://placehold.co/1280x720/333333/ffffff?text=Image+Two',
+            credit: 'Second placeholder image',
+            duration: 10
         });
         await image1.save();
         await image2.save();
-        console.log('...Default images created.');
+        console.log('   - Default images created.');
 
-        // 2. Create a default image list that uses the images we just made
-        console.log("...Attempting to create ImageList with name: 'Default'"); // Added for debugging
+        // 2. Create a default image list and link the images
+        console.log('   - Creating default image list...');
         const defaultImageList = new ImageList({
-            name: 'Default', // This line ensures the 'name' path is provided
-            images: [image1._id, image2._id] // Link to the images by their IDs
+            name: 'Default',
+            images: [image1._id, image2._id]
         });
         await defaultImageList.save();
-        console.log('...Default image list created successfully.');
+        console.log('   - Default image list created.');
 
-        // 3. Create the main global config
-        const defaultGlobalConfig = new GlobalConfig({
-            name: 'Global Display Config',
-            title: 'Welcome to the Display!',
-            globalSlideDuration: 8,
-            tempUnit: 'F'
+        // 3. Create the global config
+        const defaultConfig = new GlobalConfig({
+            name: 'Default Display Config',
+            title: 'Welcome!',
+            globalSlideDuration: 7,
+            weatherLocation: "Houghton, MI",
+            timeFormat: "12hr",
+            tempUnit: "C"
         });
-        await defaultGlobalConfig.save();
-        console.log('...Default global config created.');
-        console.log('Database seeding complete!');
+        await defaultConfig.save();
+        console.log('   - Global config created.');
 
+        console.log('✅ Database seeded successfully.');
 
     } catch (err) {
-        console.error('Error during database seeding:', err);
+        console.warn('Error during startup tasks:', err);
     }
 };
 
@@ -80,8 +106,8 @@ const seedDefaultData = async () => {
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('Successfully connected to MongoDB.');
-        // Once connected, seed the database.
-        seedDefaultData();
+        // Once connected, run the startup tasks.
+        runStartupTasks();
     })
     .catch(err => {
         console.error('Database connection error:', err);
@@ -90,7 +116,6 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- API Routes ---
 app.use('/api/display', displayRoutes);
-
 
 // --- Start the Server ---
 app.listen(PORT, () => {

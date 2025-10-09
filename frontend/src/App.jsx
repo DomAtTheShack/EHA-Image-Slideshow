@@ -15,10 +15,10 @@ const formatDate = (date) => {
 // =================================================================================================
 export default function App() {
     // ---------------------------------------------------------------------------------------------
-    // STATE MANAGEMENT - Now split into two main states
+    // STATE MANAGEMENT
     // ---------------------------------------------------------------------------------------------
-    const [globalConfig, setGlobalConfig] = useState(null); // Holds the main settings (title, etc.)
-    const [imageList, setImageList] = useState(null);       // Holds the list of images to display
+    const [globalConfig, setGlobalConfig] = useState(null);
+    const [imageList, setImageList] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentTime, setCurrentTime] = useState(formatTime(new Date()));
     const [currentDate, setCurrentDate] = useState(formatDate(new Date()));
@@ -33,7 +33,6 @@ export default function App() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // The API endpoint has changed from /config to /data
                 const response = await fetch('/api/display/data');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -41,7 +40,6 @@ export default function App() {
                 const data = await response.json();
                 console.log("✅ Data fetched from backend:", data);
 
-                // Check if both parts of the data are valid
                 if (data.globalConfig && data.imageList && data.imageList.images.length > 0) {
                     setGlobalConfig(data.globalConfig);
                     setImageList(data.imageList);
@@ -59,19 +57,17 @@ export default function App() {
         };
 
         fetchData();
-        const dataFetchInterval = setInterval(fetchData, 60000); // Refetch every minute
+        const dataFetchInterval = setInterval(fetchData, 60000);
         return () => clearInterval(dataFetchInterval);
     }, []);
 
     // EFFECT 2: Manage the DYNAMIC image slideshow timer.
     useEffect(() => {
-        // This effect now depends on 'imageModel.js' instead of a single 'config' object.
         if (!imageList || !imageList.images || imageList.images.length === 0) {
-            return; // Don't run if there are no images.
+            return;
         }
 
         const currentImage = imageList.images[currentIndex];
-        // Use the image's specific duration, or the global default from globalConfig
         const durationInSeconds = currentImage.duration || globalConfig?.globalSlideDuration || 7;
         const durationInMilliseconds = durationInSeconds * 1000;
 
@@ -82,7 +78,7 @@ export default function App() {
         }, durationInMilliseconds);
 
         return () => clearTimeout(timer);
-    }, [currentIndex, imageList, globalConfig]); // Effect re-runs if any of these change
+    }, [currentIndex, imageList, globalConfig]);
 
     // EFFECT 3: Manage the live clock.
     useEffect(() => {
@@ -94,6 +90,24 @@ export default function App() {
         return () => clearInterval(clockInterval);
     }, []);
 
+    // EFFECT 4: Handle auto-reloading the page on error.
+    useEffect(() => {
+        // If there is no error, do nothing.
+        if (!error) {
+            return;
+        }
+
+        // If there is an error, set a timer to reload the page.
+        console.log(`🔴 Error detected. Reloading in 5 seconds...`);
+        const reloadTimer = setTimeout(() => {
+            console.log("Reloading the page now.");
+            window.location.reload();
+        }, 5000); // 5000 milliseconds = 5 seconds
+
+        // Cleanup function: If the error is cleared before 5s, cancel the reload.
+        return () => clearTimeout(reloadTimer);
+    }, [error]); // This effect only runs when the 'error' state changes.
+
     // ---------------------------------------------------------------------------------------------
     // RENDER LOGIC
     // ---------------------------------------------------------------------------------------------
@@ -103,11 +117,11 @@ export default function App() {
             <div className="w-screen h-screen bg-red-900 flex flex-col items-center justify-center text-white text-3xl font-sans p-10 text-center">
                 <h1 className="text-6xl font-bold mb-4">Display Error</h1>
                 <p>{error}</p>
+                <p className="mt-4 text-xl">Attempting to reload in 5 seconds...</p>
             </div>
         );
     }
 
-    // Now wait for both configs to be loaded
     if (!globalConfig || !imageList) {
         return (
             <div className="w-screen h-screen bg-black flex items-center justify-center text-white text-3xl font-sans">
@@ -120,14 +134,12 @@ export default function App() {
 
     return (
         <div className="w-screen h-screen bg-black text-white p-8 flex flex-col font-sans overflow-hidden">
-            {/* --- Header Section (uses globalConfig.title) --- */}
             <header className="flex justify-between items-baseline mb-6">
                 <h1 className="text-5xl font-bold">{globalConfig.title}</h1>
                 <div className="text-5xl font-semibold">{currentTime}</div>
             </header>
 
             <main className="flex-grow flex gap-8 h-[calc(100%-100px)]">
-                {/* --- Image Display Section (uses imageModel.js.images) --- */}
                 <div className="flex-1 flex flex-col justify-center items-center h-full relative">
                     {imageList.images.map((image, index) => (
                         <img
@@ -144,7 +156,6 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* --- Side Information Panel (uses globalConfig.tempUnit) --- */}
                 <aside className="w-[350px] bg-yellow-400 text-black p-8 rounded-2xl flex flex-col justify-start items-start gap-8">
                     <div className="w-full">
                         <h2 className="text-4xl font-bold mb-2">Date:</h2>
