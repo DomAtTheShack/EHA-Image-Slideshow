@@ -24,16 +24,48 @@ const GlobalConfigSchema = new mongoose.Schema({
         type: String,
         default: 'Houghton, MI'
     },
+    location: {
+        type: String,
+        default: 'MTU'
+    },
     timeFormat: {
         type: String,
         enum: ['12hr', '24hr'],
         default: '12hr'
     },
-    tempUnit: {
+    temp: {
+        type: Number,
+        default: 20
+    },
+    condition: {
         type: String,
-        enum: ['C', 'F'],
-        default: 'C'
-    }
+        default: 'Clear'
+    },
+    windSpeed: {
+        type: Number,
+        default: 0
+    },
+    precipitation: {
+        type: Number,
+        default: 0
+    },
+    windChill: {
+        type: Number,
+        default: 0
+    },
+    windDir: {
+        type: String,
+        default: 'N'
+    },
+    windDegree:{
+        type: Number,
+        default: 0
+    },
+    unitSystem: {
+        type: String,
+        enum: ['metric', 'imperial'],
+        default: 'metric'
+    },
 }, { versionKey: false });
 
 module.exports = mongoose.model('GlobalConfig', GlobalConfigSchema);

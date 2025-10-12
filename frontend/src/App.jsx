@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { WiThermometer, WiRain, WiStrongWind, WiDaySunny, WiSnow } from 'react-icons/wi';
 
 // =================================================================================================
 // HELPER FUNCTIONS (No changes here)
 // =================================================================================================
-const formatTime = (date) => {
-    return date.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase();
-};
-const formatDate = (date) => {
-    return date.toLocaleString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
+function formatTime(date, format = "12hr") {
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+
+    if (format === "24hr") {
+        return `${hours.toString().padStart(2, "0")}:${minutes}`;
+    } else {
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12 || 12; // Convert 0 → 12
+        return `${hours}:${minutes} ${ampm}`;
+    }
+}
+
+function formatDate(date) {
+        return date.toLocaleDateString(undefined, {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+        });
+}
+
 
 // =================================================================================================
 // MAIN APPLICATION COMPONENT
@@ -22,8 +38,10 @@ export default function App() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [currentTime, setCurrentTime] = useState(formatTime(new Date()));
     const [currentDate, setCurrentDate] = useState(formatDate(new Date()));
-    const [weather, setWeather] = useState({ temp: 11, condition: 'Clear' });
     const [error, setError] = useState(null);
+    let percipUnit = "mm";
+    let windUnit = "km/h";
+    let tempUnit = "C";
 
     // ---------------------------------------------------------------------------------------------
     // SIDE EFFECTS (useEffect)
@@ -80,15 +98,18 @@ export default function App() {
         return () => clearTimeout(timer);
     }, [currentIndex, imageList, globalConfig]);
 
-    // EFFECT 3: Manage the live clock.
     useEffect(() => {
+        if (!globalConfig) return; // Skip until config is loaded
+
         const clockInterval = setInterval(() => {
             const now = new Date();
-            setCurrentTime(formatTime(now));
+            setCurrentTime(formatTime(now, globalConfig.timeFormat));
             setCurrentDate(formatDate(now));
         }, 1000);
+
         return () => clearInterval(clockInterval);
-    }, []);
+    }, [globalConfig]);
+
 
     // EFFECT 4: Handle auto-reloading the page on error.
     useEffect(() => {
@@ -132,14 +153,25 @@ export default function App() {
 
     const currentImage = imageList.images[currentIndex];
 
+    if(globalConfig.unitSystem === "metric"){
+        percipUnit = "mm";
+        windUnit = "km/h";
+        tempUnit = "C";
+    }else{
+        percipUnit = "in";
+        windUnit = "mph";
+        tempUnit = "F";
+    }
+
     return (
         <div className="w-screen h-screen bg-black text-white p-8 flex flex-col font-sans overflow-hidden">
             <header className="flex justify-between items-baseline mb-6">
-                <h1 className="text-5xl font-bold">{globalConfig.title}</h1>
-                <div className="text-5xl font-semibold">{currentTime}</div>
+                <h1 className="text-5xl font-bold tracking-wide">{globalConfig.title}</h1>
+                <div className="text-5xl font-mono">{currentTime}</div>
             </header>
 
             <main className="flex-grow flex gap-8 h-[calc(100%-100px)]">
+                {/* Image Panel */}
                 <div className="flex-1 flex flex-col justify-center items-center h-full relative">
                     {imageList.images.map((image, index) => (
                         <img
@@ -151,19 +183,70 @@ export default function App() {
                             }`}
                         />
                     ))}
-                    <div className="absolute bottom-4 left-4 text-3xl font-medium bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                    <div className="absolute bottom-4 left-4 text-3xl font-medium bg-black bg-opacity-60 px-4 py-2 rounded-lg">
                         {currentImage?.credit}
                     </div>
                 </div>
 
-                <aside className="w-[350px] bg-yellow-400 text-black p-8 rounded-2xl flex flex-col justify-start items-start gap-8">
+                {/* Weather Panel */}
+                <aside className="w-[375px] bg-yellow-400 text-black p-8 rounded-2xl flex flex-col gap-6 shadow-2xl">
+                    {/* Date */}
                     <div className="w-full">
-                        <h2 className="text-4xl font-bold mb-2">Date:</h2>
-                        <p className="text-4xl font-semibold">{currentDate}</p>
+                        <h2 className="text-5xl font-semibold">{currentDate}</h2>
                     </div>
+
                     <div className="w-full">
-                        <h2 className="text-4xl font-bold mb-2">Weather:</h2>
-                        <p className="text-4xl font-semibold">{weather.temp}°{globalConfig.tempUnit}</p>
+                        <h2 className="text-3xl font-bold mb-4">Weather in {globalConfig.location}</h2>
+
+                        {/* Temperature */}
+                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                            <WiThermometer className="text-4xl" />
+                            <div>
+                                <h3 className="text-xl font-semibold">Temperature</h3>
+                                <p className="text-3xl">{globalConfig.temp}°{tempUnit}</p>
+                            </div>
+                        </div>
+
+                        {/* Condition */}
+                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                            <WiDaySunny className="text-4xl" />
+                            <div>
+                                <h3 className="text-xl font-semibold">Condition</h3>
+                                <p className="text-3xl">{globalConfig.condition}</p>
+                            </div>
+                        </div>
+
+                        {/* Precipitation */}
+                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                            <WiRain className="text-4xl" />
+                            <div>
+                                <h3 className="text-xl font-semibold">Precipitation</h3>
+                                <p className="text-3xl">{globalConfig.precipitation} {percipUnit}</p>
+                            </div>
+                        </div>
+
+                        {/* Windchill */}
+                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                            <WiSnow className="text-4xl" />
+                            <div>
+                                <h3 className="text-xl font-semibold">Windchill</h3>
+                                <p className="text-3xl">{globalConfig.windChill}°{tempUnit}</p>
+                            </div>
+                        </div>
+
+                        {/* Wind Speed & Direction */}
+                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                            <WiStrongWind
+                                className="text-4xl transform"
+                                style={{ transform: `rotate(${globalConfig.windDegree + 90}deg)` }}
+                            />
+                            <div>
+                                <h3 className="text-xl font-semibold">Wind</h3>
+                                <p className="text-3xl">
+                                    {globalConfig.windSpeed} {windUnit} • {globalConfig.windDir}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </aside>
             </main>

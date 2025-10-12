@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { writeFileSync, readFileSync } = require('fs');
-3
+
 // Import all the models we need
+const { fetchWeatherData, writeWeatherData } = require('../weather.js');
 const GlobalConfig = require('../models/globalConfigModel');
 const ImageList = require('../models/imageListModel');
 const BASE_WEATHER_API = "https://api.weatherapi.com/v1/current.json"
@@ -28,6 +28,24 @@ router.get('/data', async (req, res) => {
         }
 
         // --- Step 3: Combine both results into a single object and send to the frontend ---
+        const weatherData = await fetchWeatherData(globalConfig);
+
+        globalConfig.condition = weatherData["current"]["condition"]["text"];
+        globalConfig.windDir = weatherData["current"]["wind_dir"];
+        globalConfig.windDegree = weatherData["current"]["wind_degree"];
+
+        if(globalConfig.unitSystem === "metric") {
+            globalConfig.precipitation = weatherData["current"]["precip_mm"];
+            globalConfig.temp = weatherData["current"]["temp_c"];
+            globalConfig.windChill = weatherData["current"]["feelslike_c"];
+            globalConfig.windSpeed = weatherData["current"]["wind_kph"];
+        }else{
+            globalConfig.precipitation = weatherData["current"]["precip_in"];
+            globalConfig.temp = weatherData["current"]["temp_f"];
+            globalConfig.windChill = weatherData["current"]["feelslike_f"];
+            globalConfig.windSpeed = weatherData["current"]["wind_mph"];
+        }
+
         res.json({
             globalConfig,
             imageList
@@ -40,53 +58,19 @@ router.get('/data', async (req, res) => {
 });
 
 router.get('/updateGlobalConfig', async (req, res) => {
-
-    // --- Step 1: Fetch the single global configuration document ---
+    try {
         const globalConfig = await GlobalConfig.findOne({});
+        if (!globalConfig) return res.status(404).json({ msg: 'Global config not found.' });
+        if (!process.env.WEATHER_API_KEY) return res.status(500).json({ error: 'Weather API key missing.' });
 
-        // --- Error handling ---
-        if (!globalConfig) {
-            return res.status(404).json({msg: 'Global configuration not found.'});
-        }
-        if (!process.env.WEATHER_API_KEY) {
-            return res.status(500).json({error: 'Weather API key is not configured on the server.'});
-        }
+        const weatherData = await fetchWeatherData(globalConfig);
+        res.json(weatherData);
+        writeWeatherData(weatherData, globalConfig);
 
-    const today = new Date();
-
-        try {
-            const url = new URL(BASE_WEATHER_API);
-            const params = {
-                key: process.env.WEATHER_API_KEY,
-                q: globalConfig.get('weatherLocation').replace(' ', ''),
-                aqi: 'yes',
-            };
-
-            url.search = new URLSearchParams(params).toString();
-
-            const response = await fetch(url);
-            if (!response.ok) {
-                // If the API returns an error, pass it along
-                throw new Error(`Weather API error! status: ${response.status}`);
-            }
-
-            const dateString = today.toDateString();
-            const filename = globalConfig.get('weatherLocation') + " " + dateString + " " + today.getHours() + "hr";
-
-            // Parse the JSON data from the successful response
-            const weatherData = await response.json();
-            const jsonString = JSON.stringify(weatherData, null, 2);
-
-            writeFileSync(`weather/${filename}.json`, jsonString);
-
-            // Send the weather data back to the client
-            res.json(weatherData);
-
-        } catch (error) {
-            // If anything goes wrong, log it and send an error response
-            console.error('Error fetching weather data:', error.message);
-            res.status(500).json({error: 'Failed to fetch weather data.'});
-        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
 });
 
 module.exports = router;

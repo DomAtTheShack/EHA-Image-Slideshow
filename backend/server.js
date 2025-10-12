@@ -4,7 +4,9 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const fs = require('fs').promises; // For filesystem operations
-const path = require('path');     // For handling file paths
+const path = require('path');
+
+
 
 // Import the Mongoose models
 const GlobalConfig = require('./models/globalConfigModel');
@@ -89,8 +91,16 @@ const runStartupTasks = async () => {
             title: 'Welcome!',
             globalSlideDuration: 7,
             weatherLocation: "Houghton, MI",
+            location: "MTU",
             timeFormat: "12hr",
-            tempUnit: "C"
+            unitSystem: "metric",
+            temp: 20,
+            condition: "Clear",
+            precipitation: 0,
+            windSpeed: 0,
+            windChill: 0,
+            windDir: "N",
+            windDegree: 0
         });
         await defaultConfig.save();
         console.log('   - Global config created.');
@@ -116,6 +126,15 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- API Routes ---
 app.use('/api/display', displayRoutes);
+
+// Serve static React build files
+app.use('/config', express.static(path.join(__dirname, 'config-ui', 'build')));
+
+// Fallback route so React Router works:
+app.get('/config/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'config-ui', 'build', 'index.html'));
+});
+
 
 // --- Start the Server ---
 app.listen(PORT, () => {
