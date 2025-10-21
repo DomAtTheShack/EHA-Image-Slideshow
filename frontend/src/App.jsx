@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { WiThermometer, WiRain, WiStrongWind, WiDaySunny, WiSnow } from 'react-icons/wi';
 
 // =================================================================================================
@@ -18,11 +18,11 @@ function formatTime(date, format = "12hr") {
 }
 
 function formatDate(date) {
-        return date.toLocaleDateString(undefined, {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-        });
+    return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+    });
 }
 
 
@@ -44,42 +44,44 @@ export default function App() {
     let tempUnit = "C";
 
     // ---------------------------------------------------------------------------------------------
+    // DATA FETCHING LOGIC (now in a useCallback hook)
+    // ---------------------------------------------------------------------------------------------
+    const fetchData = useCallback(async () => {
+        try {
+            const response = await fetch('/api/display/data');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log("✅ Data fetched from backend:", data);
+
+            if (data.globalConfig && data.imageList && data.imageList.images.length > 0) {
+                setGlobalConfig(data.globalConfig);
+                setImageList(data.imageList);
+                setError(null);
+            } else {
+                setGlobalConfig(null);
+                setImageList(null);
+                setError("Configuration loaded, but no images found in the default list.");
+            }
+
+        } catch (e) {
+            console.error("Failed to fetch display configuration:", e);
+            setError("Could not connect to the server.");
+        }
+    }, []); // Empty dependency array means this function is created only once.
+
+
+    // ---------------------------------------------------------------------------------------------
     // SIDE EFFECTS (useEffect)
     // ---------------------------------------------------------------------------------------------
 
-    // EFFECT 1: Fetch the combined config data from the backend.
+    // EFFECT 1: Fetch initial data when the component first loads.
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch('/api/display/data');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log("✅ Data fetched from backend:", data);
-
-                if (data.globalConfig && data.imageList && data.imageList.images.length > 0) {
-                    setGlobalConfig(data.globalConfig);
-                    setImageList(data.imageList);
-                    setError(null);
-                } else {
-                    setGlobalConfig(null);
-                    setImageList(null);
-                    setError("Configuration loaded, but no images found in the default list.");
-                }
-
-            } catch (e) {
-                console.error("Failed to fetch display configuration:", e);
-                setError("Could not connect to the server.");
-            }
-        };
-
         fetchData();
-        const dataFetchInterval = setInterval(fetchData, 60000);
-        return () => clearInterval(dataFetchInterval);
-    }, []);
+    }, [fetchData]); // The dependency array ensures this runs only once on mount.
 
-    // EFFECT 2: Manage the DYNAMIC image slideshow timer.
+    // EFFECT 2: Manage the DYNAMIC image slideshow timer and data refresh.
     useEffect(() => {
         if (!imageList || !imageList.images || imageList.images.length === 0) {
             return;
@@ -92,14 +94,22 @@ export default function App() {
         console.log(`➡️ Scheduling next slide. Current index: ${currentIndex}. Duration: ${durationInSeconds}s.`);
 
         const timer = setTimeout(() => {
-            setCurrentIndex(prevIndex => (prevIndex + 1) % imageList.images.length);
+            const nextIndex = (currentIndex + 1) % imageList.images.length;
+            setCurrentIndex(nextIndex);
+
+            // *** NEW LOGIC: If we've looped back to the first image, it's the end of a cycle.
+            if (nextIndex === 0) {
+                console.log("✅ Slideshow cycle finished. Refetching data...");
+                fetchData();
+            }
         }, durationInMilliseconds);
 
         return () => clearTimeout(timer);
-    }, [currentIndex, imageList, globalConfig]);
+    }, [currentIndex, imageList, globalConfig, fetchData]); // Added fetchData to dependency array
 
+    // EFFECT 3: Manage the live clock (no changes here).
     useEffect(() => {
-        if (!globalConfig) return; // Skip until config is loaded
+        if (!globalConfig) return;
 
         const clockInterval = setInterval(() => {
             const now = new Date();
@@ -111,26 +121,21 @@ export default function App() {
     }, [globalConfig]);
 
 
-    // EFFECT 4: Handle auto-reloading the page on error.
+    // EFFECT 4: Handle auto-reloading the page on error (no changes here).
     useEffect(() => {
-        // If there is no error, do nothing.
-        if (!error) {
-            return;
-        }
+        if (!error) return;
 
-        // If there is an error, set a timer to reload the page.
         console.log(`🔴 Error detected. Reloading in 5 seconds...`);
         const reloadTimer = setTimeout(() => {
             console.log("Reloading the page now.");
             window.location.reload();
-        }, 5000); // 5000 milliseconds = 5 seconds
+        }, 5000);
 
-        // Cleanup function: If the error is cleared before 5s, cancel the reload.
         return () => clearTimeout(reloadTimer);
-    }, [error]); // This effect only runs when the 'error' state changes.
+    }, [error]);
 
     // ---------------------------------------------------------------------------------------------
-    // RENDER LOGIC
+    // RENDER LOGIC (No changes below this line)
     // ---------------------------------------------------------------------------------------------
 
     if (error) {

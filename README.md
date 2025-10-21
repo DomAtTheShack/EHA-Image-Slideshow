@@ -6,7 +6,7 @@ Project Structure
 │   ├── models/
 │   │   └── globalConfigModel.js # Mongoose schema for images
 │   ├── routes/
-│   │   └── displayRoutes.js # API routes for the display
+│   │   └── apiRoutes.js # API routes for the display
 │   ├── .env.example      # Example environment variables
 │   ├── .gitignore
 │   ├── package.json
