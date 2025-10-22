@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Section, InputField, Button } from './UIComponents';
 
-export default function ImageLibraryTab({ images, onAddImage, onUpdateImage, onDeleteImage }) {
+export default function ImageLibraryTab({ images, imageLists, selectedListId, onAddImage, onUpdateImage, onDeleteImage, onAddImageToList }) {
     const [newImageData, setNewImageData] = useState({ url: '', credit: '', duration: 7 });
     const [editingImage, setEditingImage] = useState(null);
 
@@ -11,12 +11,12 @@ export default function ImageLibraryTab({ images, onAddImage, onUpdateImage, onD
         formSetter(prev => ({ ...prev, [name]: parsedValue }));
     };
 
-    const handleAddNew = () => {
+    const handleAddNewImage = () => {
         onAddImage(newImageData);
         setNewImageData({ url: '', credit: '', duration: 7 });
     };
 
-    const handleUpdate = () => {
+    const handleUpdateImage = () => {
         onUpdateImage(editingImage);
         setEditingImage(null);
     };
@@ -30,7 +30,7 @@ export default function ImageLibraryTab({ images, onAddImage, onUpdateImage, onD
                     <InputField label="Credit Text" name="credit" value={newImageData.credit} onChange={(e) => handleFormChange(e, setNewImageData)} />
                     <InputField label="Duration (seconds)" name="duration" type="number" value={newImageData.duration} onChange={(e) => handleFormChange(e, setNewImageData)} />
                 </div>
-                <Button onClick={handleAddNew} color="green" className="mt-4">Save New Image</Button>
+                <Button onClick={handleAddNewImage} color="green" className="mt-4">Save New Image</Button>
             </div>
 
             <div className="max-h-[600px] overflow-y-auto">
@@ -44,7 +44,7 @@ export default function ImageLibraryTab({ images, onAddImage, onUpdateImage, onD
                                     <InputField label="Duration (seconds)" name="duration" type="number" value={editingImage.duration} onChange={(e) => handleFormChange(e, setEditingImage)} />
                                 </div>
                                 <div className="flex gap-2 mt-4">
-                                    <Button onClick={handleUpdate} color="green">Save Changes</Button>
+                                    <Button onClick={handleUpdateImage} color="green">Save Changes</Button>
                                     <Button onClick={() => setEditingImage(null)} color="gray">Cancel</Button>
                                 </div>
                             </div>
@@ -57,8 +57,9 @@ export default function ImageLibraryTab({ images, onAddImage, onUpdateImage, onD
                                         <p className="text-xs text-gray-400">Duration: {image.duration}s</p>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button onClick={() => setEditingImage({ ...image })} color="blue">Edit</Button>
+                                <div className="flex items-center gap-2">
+                                    <Button onClick={() => onAddImageToList(image._id)} color="blue">Add to "{imageLists.find(l => l._id === selectedListId)?.name}"</Button>
+                                    <Button onClick={() => setEditingImage({ ...image })} color="gray">Edit</Button>
                                     <Button onClick={() => onDeleteImage(image._id)} color="red">Delete</Button>
                                 </div>
                             </div>

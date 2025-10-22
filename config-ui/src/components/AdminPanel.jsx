@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import GlobalSettingsTab from './GlobalSettingsTab';
 import SlideshowsTab from './SlideshowsTab';
 import ImageLibraryTab from './ImageLibraryTab';
-import Notification from './Notifications';
+import Notification from './Notification';
 import Modal from './Modal';
 import { TabButton } from './UIComponents';
 
@@ -13,13 +13,13 @@ export default function AdminPanel() {
     const [data, setData] = useState({ globalConfig: null, imageLists: [], images: [] });
     const [activeTab, setActiveTab] = useState('global');
     const [selectedListId, setSelectedListId] = useState('');
-    const [notification, setNotification] = useState({ message: '', type: '', show: false });
+    const [notification, setNotification] = useState({ message: '', type: 'success', show: false });
     const [modal, setModal] = useState({ show: false, title: '', message: '', onConfirm: () => {} });
 
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
     // --- Data Fetching ---
-    const fetchData = async () => {
+    const fetchData = useCallback(async (showSuccess = false) => {
         try {
             const response = await fetch(`${API_URL}/admin/data`);
             if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
@@ -28,18 +28,21 @@ export default function AdminPanel() {
             if (fetchedData.imageLists.length > 0 && !selectedListId) {
                 setSelectedListId(fetchedData.imageLists[0]._id);
             }
-            setLoading(false);
+            if (showSuccess) {
+                showNotification('Data refreshed successfully!');
+            }
         } catch (err) {
             setError(err.message);
+        } finally {
             setLoading(false);
         }
-    };
+    }, [selectedListId]);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
-    // --- Helper Functions for Notifications & Modals ---
+    // --- Helper Functions ---
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type, show: true });
     };
@@ -57,7 +60,7 @@ export default function AdminPanel() {
                 body: JSON.stringify(configToSave),
             });
             showNotification('Global settings saved successfully!');
-            fetchData(); // Refetch to confirm changes
+            fetchData();
         } catch (err) {
             showNotification(`Error saving settings: ${err.message}`, 'error');
         }
@@ -94,20 +97,16 @@ export default function AdminPanel() {
     };
 
     const handleDeleteImage = (imageId) => {
-        showConfirmModal(
-            'Delete Image?',
-            'This will remove the image from all lists and delete it permanently. This action cannot be undone.',
-            async () => {
-                try {
-                    await fetch(`${API_URL}/admin/images/${imageId}`, { method: 'DELETE' });
-                    await fetchData();
-                    showNotification('Image deleted permanently.');
-                } catch (err) {
-                    showNotification(`Error deleting image: ${err.message}`, 'error');
-                }
-                setModal({ ...modal, show: false });
+        showConfirmModal('Delete Image?', 'This will remove the image from all lists and delete it permanently.', async () => {
+            try {
+                await fetch(`${API_URL}/admin/images/${imageId}`, { method: 'DELETE' });
+                await fetchData();
+                showNotification('Image deleted permanently.');
+            } catch (err) {
+                showNotification(`Error deleting image: ${err.message}`, 'error');
             }
-        );
+            setModal({ ...modal, show: false });
+        });
     };
 
     const handleUpdateImageList = async (listId, images, successMessage) => {
@@ -124,44 +123,55 @@ export default function AdminPanel() {
         }
     };
 
-    const handleAddImageToList = (imageId) => {
-        const list = data.imageLists.find(l => l._id === selectedListId);
-        if (list.images.some(img => img._id === imageId)) return showNotification('Image is already in this list.', 'error');
-        const updatedImageIds = [...list.images.map(img => img._id), imageId];
-        handleUpdateImageList(selectedListId, updatedImageIds, 'Image added to slideshow.');
+    const handleCreateList = async (listName) => {
+        try {
+            const response = await fetch(`${API_URL}/admin/image-lists`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: listName }),
+            });
+            if (!response.ok) throw new Error('Failed to create slideshow');
+            const newList = await response.json();
+            await fetchData();
+            setSelectedListId(newList._id);
+            showNotification(`Slideshow "${listName}" created.`);
+        } catch (err) {
+            showNotification(err.message, 'error');
+        }
     };
 
-    const handleRemoveImageFromList = (imageId) => {
-        const list = data.imageLists.find(l => l._id === selectedListId);
-        const updatedImageIds = list.images.map(img => img._id).filter(id => id !== imageId);
-        handleUpdateImageList(selectedListId, updatedImageIds, 'Image removed from slideshow.');
+    const handleDeleteList = (listId) => {
+        const list = data.imageLists.find(l => l._id === listId);
+        showConfirmModal(`Delete "${list.name}"?`, 'Are you sure you want to delete this slideshow? This cannot be undone.', async () => {
+            try {
+                await fetch(`${API_URL}/admin/image-lists/${listId}`, { method: 'DELETE' });
+                await fetchData();
+                showNotification(`Slideshow "${list.name}" deleted.`);
+            } catch (err) {
+                showNotification(err.message, 'error');
+            }
+            setModal({ ...modal, show: false });
+        });
     };
 
-    const handleReorderList = (listId, reorderedImageIds) => {
-        // Optimistically update the UI for a smooth drag-and-drop experience
+    const handleReorderList = (listId, reorderedImages) => {
         setData(prevData => ({
             ...prevData,
-            imageLists: prevData.imageLists.map(list => {
-                if (list._id === listId) {
-                    const reorderedImages = reorderedImageIds.map(id =>
-                        list.images.find(img => img._id === id)
-                    );
-                    return { ...list, images: reorderedImages };
-                }
-                return list;
-            })
+            imageLists: prevData.imageLists.map(list =>
+                list._id === listId ? { ...list, images: reorderedImages } : list
+            )
         }));
-        handleUpdateImageList(listId, reorderedImageIds, null);
+        handleUpdateImageList(listId, reorderedImages.map(img => img._id));
     };
 
     // --- Render Logic ---
     if (loading) return <div className="text-center p-10">Loading Admin Panel...</div>;
     if (error) return <div className="text-red-500 text-center p-10">Error: {error}</div>;
-    if (!data.globalConfig) return <div className="text-yellow-500 text-center p-10">No configuration data found. Please check the backend.</div>;
+    if (!data.globalConfig) return <div className="text-yellow-500 text-center p-10">No config data found.</div>;
 
     return (
         <div className="p-4 md:p-8">
-            {notification.show && <Notification message={notification.message} type={notification.type} onDismiss={() => setNotification({ ...notification, show: false })} />}
+            <Notification message={notification.message} type={notification.type} show={notification.show} onDismiss={() => setNotification(prev => ({ ...prev, show: false }))} />
             {modal.show && <Modal title={modal.title} message={modal.message} onConfirm={modal.onConfirm} onCancel={() => setModal({ ...modal, show: false })} />}
 
             <header className="flex justify-between items-center mb-8">
@@ -179,6 +189,9 @@ export default function AdminPanel() {
                     <GlobalSettingsTab
                         config={data.globalConfig}
                         onSave={handleSaveGlobalConfig}
+                        apiUrl={API_URL}
+                        onActionSuccess={() => fetchData(true)}
+                        showNotification={showNotification}
                     />
                 )}
                 {activeTab === 'lists' && (
@@ -187,17 +200,27 @@ export default function AdminPanel() {
                         allImages={data.images}
                         selectedListId={selectedListId}
                         onSelectList={setSelectedListId}
-                        onAddImageToList={handleAddImageToList}
-                        onRemoveImageFromList={handleRemoveImageFromList}
                         onReorderList={handleReorderList}
+                        onCreateList={handleCreateList}
+                        onDeleteList={handleDeleteList}
+                        onUpdateImageList={handleUpdateImageList}
+                        showNotification={showNotification}
                     />
                 )}
                 {activeTab === 'library' && (
                     <ImageLibraryTab
                         images={data.images}
+                        imageLists={data.imageLists}
+                        selectedListId={selectedListId}
                         onAddImage={handleAddNewImage}
                         onUpdateImage={handleUpdateImage}
                         onDeleteImage={handleDeleteImage}
+                        onAddImageToList={(imageId) => {
+                            const list = data.imageLists.find(l => l._id === selectedListId);
+                            if (list.images.some(img => img._id === imageId)) return showNotification('Image is already in this list.', 'error');
+                            const updatedImageIds = [...list.images.map(img => img._id), imageId];
+                            handleUpdateImageList(selectedListId, updatedImageIds, 'Image added to slideshow.');
+                        }}
                     />
                 )}
             </main>
