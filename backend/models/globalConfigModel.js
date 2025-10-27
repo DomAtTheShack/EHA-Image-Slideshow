@@ -7,65 +7,25 @@
 const mongoose = require('mongoose');
 
 const GlobalConfigSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        default: 'Global Display Config'
-    },
-    title: {
-        type: String,
-        default: 'Welcome!'
-    },
-    globalSlideDuration: {
-        type: Number,
-        default: 7 // Default duration in seconds for images that don't have their own
-    },
-    weatherLocation: {
-        type: String,
-        default: 'Houghton, MI'
-    },
-    location: {
-        type: String,
-        default: 'MTU'
-    },
-    timeFormat: {
-        type: String,
-        enum: ['12hr', '24hr'],
-        default: '12hr'
-    },
-    temp: {
-        type: Number,
-        default: 20
-    },
-    condition: {
-        type: String,
-        default: 'Clear'
-    },
-    windSpeed: {
-        type: Number,
-        default: 0
-    },
-    precipitation: {
-        type: Number,
-        default: 0
-    },
-    windChill: {
-        type: Number,
-        default: 0
-    },
-    windDir: {
-        type: String,
-        default: 'N'
-    },
-    windDegree:{
-        type: Number,
-        default: 0
-    },
-    unitSystem: {
-        type: String,
-        enum: ['metric', 'imperial'],
-        default: 'metric'
-    },
+    name: { type: String, required: true, default: 'Global Display Config' },
+    title: { type: String, default: 'Welcome!' },
+    globalSlideDuration: { type: Number, default: 7 },
+    weatherLocation: { type: String, default: 'Houghton, MI' },
+    location: { type: String, default: 'MTU' },
+    timeFormat: { type: String, enum: ['12hr', '24hr'], default: '12hr' },
+    temp: { type: Number, default: 20 },
+    condition: { type: String, default: 'Clear' },
+    windSpeed: { type: Number, default: 0 },
+    precipitation: { type: Number, default: 0 },
+    windChill: { type: Number, default: 0 },
+    windDir: { type: String, default: 'N' },
+    windDegree: { type: Number, default: 0 },
+    unitSystem: { type: String, enum: ['metric', 'imperial'], default: 'metric' },
+
+    // NEW: Currently active slideshow
+    activeSlideshowId: { type: mongoose.Schema.Types.ObjectId, ref: 'ImageList', default: null },
+
 }, { versionKey: false });
+
 
 module.exports = mongoose.model('GlobalConfig', GlobalConfigSchema);

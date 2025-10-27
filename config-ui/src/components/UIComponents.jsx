@@ -2,15 +2,15 @@ import React from 'react';
 
 // Reusable component for section layout
 export const Section = ({ title, children }) => (
-    <div className="bg-gray-700 rounded-lg shadow-md p-6 mb-6 animate-fade-in">
-        {title && <h2 className="text-xl font-semibold text-yellow-300 mb-4 border-b border-gray-600 pb-2">{title}</h2>}
+    <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 animate-fade-in">
+        {title && <h2 className="text-2xl font-bold text-yellow-400 mb-4 border-b border-gray-700 pb-2">{title}</h2>}
         {children}
     </div>
 );
 
 // Reusable Input Field component
 export const InputField = ({ label, name, value, onChange, type = 'text', step = 'any', placeholder = '' }) => (
-    <div className="w-full">
+    <div className="w-full mb-4">
         {label && <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor={name}>{label}</label>}
         <input
             id={name} name={name} type={type} value={value} onChange={onChange} step={step} placeholder={placeholder}
