@@ -275,7 +275,10 @@ export default function App() {
                         {imageList.images.map((image, index) => (
                             <img
                                 key={image._id}
-                                src={image.url}
+                                // ==========================================================
+                                // THIS IS THE FIX: Prepending the API URL
+                                // ==========================================================
+                                src={`${process.env.REACT_APP_API_URL}${image.url}`}
                                 alt={image.credit}
                                 className={`absolute top-0 left-0 w-full h-full object-contain transition-opacity duration-1000 ease-in-out ${
                                     index === currentIndex ? 'opacity-100' : 'opacity-0'

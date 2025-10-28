@@ -70,6 +70,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 // Note: authRoutes is often not needed if login is part of adminRoutes
+app.use('/api/userImages', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', authRoutes);           // Optional
 app.use('/api', apiRoutes);            // Optional public API
 app.use('/api/admin', adminRoutes);    // Admin routes now internally handle JWT
