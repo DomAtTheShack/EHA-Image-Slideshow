@@ -24,7 +24,7 @@ const GlobalConfigSchema = new mongoose.Schema({
 
     // NEW: Currently active slideshow
     activeSlideshowId: { type: mongoose.Schema.Types.ObjectId, ref: 'ImageList', default: null },
-
+    events: [{ type: String }]
 }, { versionKey: false });
 
 

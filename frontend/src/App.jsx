@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { WiThermometer, WiRain, WiStrongWind, WiDaySunny, WiSnow } from 'react-icons/wi';
+import {
+    WiThermometer,
+    WiRain,
+    WiStrongWind,
+    WiDaySunny,
+    WiSnow,
+    WiCloudy,
+    WiFog
+} from 'react-icons/wi';
 
 // =================================================================================================
-// HELPER FUNCTIONS (No changes here)
+// HELPER FUNCTIONS (No changes)
 // =================================================================================================
 function formatTime(date, format = "12hr") {
     let hours = date.getHours();
@@ -25,13 +33,26 @@ function formatDate(date) {
     });
 }
 
+function getWeatherIcon(condition, className = "text-6xl") {
+    if (!condition) return <WiDaySunny className={className} />;
+    const cond = condition.toLowerCase();
+
+    if (cond.includes('snow')) return <WiSnow className={className} />;
+    if (cond.includes('rain') || cond.includes('drizzle')) return <WiRain className={className} />;
+    if (cond.includes('cloud')) return <WiCloudy className={className} />;
+    if (cond.includes('fog') || cond.includes('mist')) return <WiFog className={className} />;
+    if (cond.includes('clear')) return <WiDaySunny className={className} />;
+
+    return <WiDaySunny className={className} />; // Default
+}
+
 
 // =================================================================================================
 // MAIN APPLICATION COMPONENT
 // =================================================================================================
 export default function App() {
     // ---------------------------------------------------------------------------------------------
-    // STATE MANAGEMENT
+    // STATE MANAGEMENT (No changes)
     // ---------------------------------------------------------------------------------------------
     const [globalConfig, setGlobalConfig] = useState(null);
     const [imageList, setImageList] = useState(null);
@@ -44,7 +65,7 @@ export default function App() {
     let tempUnit = "C";
 
     // ---------------------------------------------------------------------------------------------
-    // DATA FETCHING LOGIC (now in a useCallback hook)
+    // DATA FETCHING LOGIC (No changes)
     // ---------------------------------------------------------------------------------------------
     const fetchData = useCallback(async () => {
         try {
@@ -69,35 +90,32 @@ export default function App() {
             console.error("Failed to fetch display configuration:", e);
             setError("Could not connect to the server.");
         }
-    }, []); // Empty dependency array means this function is created only once.
+    }, []);
 
 
     // ---------------------------------------------------------------------------------------------
-    // SIDE EFFECTS (useEffect)
+    // SIDE EFFECTS (useEffect) (No changes)
     // ---------------------------------------------------------------------------------------------
 
-    // EFFECT 1: Fetch initial data when the component first loads.
+    // EFFECT 1: Fetch initial data
     useEffect(() => {
         fetchData();
-    }, [fetchData]); // The dependency array ensures this runs only once on mount.
+    }, [fetchData]);
 
-    // EFFECT 2: Manage the DYNAMIC image slideshow timer and data refresh.
+    // EFFECT 2: Manage the DYNAMIC image slideshow timer and data refresh
     useEffect(() => {
         if (!imageList || !imageList.images || imageList.images.length === 0) {
             return;
         }
 
         const currentImage = imageList.images[currentIndex];
-        const durationInSeconds = currentImage.duration || globalConfig?.globalSlideDuration || 7;
+        const durationInSeconds = currentImage?.duration || globalConfig?.globalSlideDuration || 7;
         const durationInMilliseconds = durationInSeconds * 1000;
-
-        console.log(`➡️ Scheduling next slide. Current index: ${currentIndex}. Duration: ${durationInSeconds}s.`);
 
         const timer = setTimeout(() => {
             const nextIndex = (currentIndex + 1) % imageList.images.length;
             setCurrentIndex(nextIndex);
 
-            // *** NEW LOGIC: If we've looped back to the first image, it's the end of a cycle.
             if (nextIndex === 0) {
                 console.log("✅ Slideshow cycle finished. Refetching data...");
                 fetchData();
@@ -105,9 +123,9 @@ export default function App() {
         }, durationInMilliseconds);
 
         return () => clearTimeout(timer);
-    }, [currentIndex, imageList, globalConfig, fetchData]); // Added fetchData to dependency array
+    }, [currentIndex, imageList, globalConfig, fetchData]);
 
-    // EFFECT 3: Manage the live clock (no changes here).
+    // EFFECT 3: Manage the live clock
     useEffect(() => {
         if (!globalConfig) return;
 
@@ -121,21 +139,17 @@ export default function App() {
     }, [globalConfig]);
 
 
-    // EFFECT 4: Handle auto-reloading the page on error (no changes here).
+    // EFFECT 4: Handle auto-reloading the page on error
     useEffect(() => {
         if (!error) return;
-
-        console.log(`🔴 Error detected. Reloading in 5 seconds...`);
         const reloadTimer = setTimeout(() => {
-            console.log("Reloading the page now.");
             window.location.reload();
         }, 5000);
-
         return () => clearTimeout(reloadTimer);
     }, [error]);
 
     // ---------------------------------------------------------------------------------------------
-    // RENDER LOGIC (No changes below this line)
+    // RENDER LOGIC (Loading/Error states) (No changes)
     // ---------------------------------------------------------------------------------------------
 
     if (error) {
@@ -156,7 +170,12 @@ export default function App() {
         );
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // RENDER LOGIC (Main component)
+    // ---------------------------------------------------------------------------------------------
+
     const currentImage = imageList.images[currentIndex];
+    const weatherIcon = getWeatherIcon(globalConfig.condition);
 
     if(globalConfig.unitSystem === "metric"){
         percipUnit = "mm";
@@ -169,15 +188,34 @@ export default function App() {
     }
 
     return (
+        // --- LAYOUT CHANGE 1 ---
+        // Removed 'relative' from the main container. It's now a pure flex column.
         <div className="w-screen h-screen bg-black text-white p-8 flex flex-col font-sans overflow-hidden">
-            <header className="flex justify-between items-baseline mb-6">
-                <h1 className="text-5xl font-bold tracking-wide">{globalConfig.title}</h1>
-                <div className="text-5xl font-mono">{currentTime}</div>
+
+            {/* --- HEADER (No change) --- */}
+            <header className="flex justify-between items-center mb-6 flex-shrink-0">
+                <div className="flex items-center gap-6">
+                    <img
+                        src="https://www.mtu.edu/mtu_resources/images/download-central/logos/husky-icon/full-color.png"
+                        alt="MTU Logo"
+                        className="h-12 scale-150"
+                    />
+                    <h1 className="text-5xl font-bold tracking-wide">{globalConfig.title}</h1>
+                </div>
+                <div className="text-5xl font-mono text-right">{currentTime}</div>
             </header>
 
-            <main className="flex-grow flex gap-8 h-[calc(100%-100px)]">
-                {/* Image Panel */}
-                <div className="flex-1 flex flex-col justify-center items-center h-full relative">
+            {/* --- LAYOUT CHANGE 2 ---
+                - 'flex-grow' makes this 'main' section fill all available space.
+                - 'overflow-hidden' stops its children from breaking the layout.
+                - Removed fixed height 'h-[calc(100%-150px)]'.
+            */}
+            <main className="flex-grow flex gap-8 overflow-hidden">
+
+                {/* --- LAYOUT CHANGE 3 ---
+                    - Removed 'justify-center' to align the image to the top.
+                */}
+                <div className="flex-1 flex flex-col items-center h-full relative">
                     {imageList.images.map((image, index) => (
                         <img
                             key={image._id}
@@ -188,61 +226,55 @@ export default function App() {
                             }`}
                         />
                     ))}
+                    {/* This credit is now safe from the ticker */}
                     <div className="absolute bottom-4 left-4 text-3xl font-medium bg-black bg-opacity-60 px-4 py-2 rounded-lg">
                         {currentImage?.credit}
                     </div>
                 </div>
 
-                {/* Weather Panel */}
-                <aside className="w-[375px] bg-yellow-400 text-black p-8 rounded-2xl flex flex-col gap-6 shadow-2xl">
+                {/* --- SIDEBAR (No change to contents) ---
+                    This will now automatically stretch to the full height of the 'main' container.
+                */}
+                <aside className="w-[375px] bg-yellow-400 text-black p-6 rounded-2xl flex flex-col gap-4 shadow-2xl overflow-y-auto">
                     {/* Date */}
-                    <div className="w-full">
-                        <h2 className="text-5xl font-semibold">{currentDate}</h2>
+                    <div className="w-full pb-4 border-b border-black border-opacity-20">
+                        <h2 className="text-4xl font-semibold">{currentDate}</h2>
                     </div>
 
                     <div className="w-full">
                         <h2 className="text-3xl font-bold mb-4">Weather in {globalConfig.location}</h2>
 
-                        {/* Temperature */}
+                        {/* Condition & Temp (New Layout) */}
                         <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiThermometer className="text-4xl" />
+                            {weatherIcon}
                             <div>
-                                <h3 className="text-xl font-semibold">Temperature</h3>
-                                <p className="text-3xl">{globalConfig.temp}°{tempUnit}</p>
-                            </div>
-                        </div>
-
-                        {/* Condition */}
-                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiDaySunny className="text-4xl" />
-                            <div>
-                                <h3 className="text-xl font-semibold">Condition</h3>
-                                <p className="text-3xl">{globalConfig.condition}</p>
-                            </div>
-                        </div>
-
-                        {/* Precipitation */}
-                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiRain className="text-4xl" />
-                            <div>
-                                <h3 className="text-xl font-semibold">Precipitation</h3>
-                                <p className="text-3xl">{globalConfig.precipitation} {percipUnit}</p>
+                                <h3 className="text-2xl font-semibold">{globalConfig.condition}</h3>
+                                <p className="text-5xl font-bold">{globalConfig.temp}°{tempUnit}</p>
                             </div>
                         </div>
 
                         {/* Windchill */}
                         <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiSnow className="text-4xl" />
+                            <WiThermometer className="text-5xl" />
                             <div>
                                 <h3 className="text-xl font-semibold">Windchill</h3>
                                 <p className="text-3xl">{globalConfig.windChill}°{tempUnit}</p>
                             </div>
                         </div>
 
+                        {/* Seasonal Snowfall */}
+                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                            <WiSnow className="text-5xl" />
+                            <div>
+                                <h3 className="text-xl font-semibold">Seasonal Snowfall</h3>
+                                <p className="text-3xl">{globalConfig.seasonalSnowfall || 0} {percipUnit}</p>
+                            </div>
+                        </div>
+
                         {/* Wind Speed & Direction */}
                         <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
                             <WiStrongWind
-                                className="text-4xl transform"
+                                className="text-5xl transform"
                                 style={{ transform: `rotate(${globalConfig.windDegree + 90}deg)` }}
                             />
                             <div>
@@ -252,10 +284,37 @@ export default function App() {
                                 </p>
                             </div>
                         </div>
+
+                        {/* Precipitation */}
+                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                            <WiRain className="text-5xl" />
+                            <div>
+                                <h3 className="text-xl font-semibold">Precipitation</h3>
+                                <p className="text-3xl">{globalConfig.precipitation} {percipUnit}</p>
+                            </div>
+                        </div>
                     </div>
                 </aside>
             </main>
+
+            {/* --- LAYOUT CHANGE 4 ---
+                - Removed 'absolute' positioning.
+                - Added 'flex-shrink-0' so it doesn't shrink.
+                - Added 'mt-6' margin to create space between it and the 'main' content.
+            */}
+            <footer className="h-16 bg-black bg-opacity-90 flex items-center overflow-hidden border-t-2 border-yellow-400 flex-shrink-0 mt-6">
+                <div className="animate-ticker text-3xl font-semibold">
+                    {(globalConfig.events && globalConfig.events.length > 0) ? (
+                        globalConfig.events.map((event, index) => (
+                            <span key={index} className="mx-12">
+                                {event}
+                            </span>
+                        ))
+                    ) : (
+                        <span className="mx-12">Welcome to Michigan Tech!</span>
+                    )}
+                </div>
+            </footer>
         </div>
     );
 }
-

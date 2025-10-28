@@ -1,0 +1,17 @@
+@keyframes ticker-scroll {
+    0% {
+        /* Start 100% off-screen to the right */
+        transform: translateX(100vw);
+    }
+    100% {
+        /* Move all the way to the left */
+        transform: translateX(-100%);
+    }
+}
+
+.animate-ticker {
+    display: inline-block;
+    white-space: nowrap;
+    padding-right: 100vw;
+    animation: ticker-scroll 25s linear infinite;
+}

@@ -1,5 +1,4 @@
-// This new file defines the schema for a single image document.
-// Each image in the database will follow this structure.
+// models/imageModel.js
 
 const mongoose = require('mongoose');
 
@@ -22,13 +21,11 @@ const ImageSchema = new mongoose.Schema({
     duration: {
         type: Number,
         default: 7 // Default duration in seconds
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
+    }
+    // 'createdAt' field is removed from here
+}, {
+    timestamps: true // This automatically adds 'createdAt' and 'updatedAt'
 });
 
 // The 'Image' model will interact with the 'images' collection in the database.
 module.exports = mongoose.model('Image', ImageSchema);
-

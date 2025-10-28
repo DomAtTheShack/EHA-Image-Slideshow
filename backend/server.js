@@ -1,3 +1,5 @@
+// server.js
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -9,8 +11,6 @@ const path = require('path');
 const apiRoutes = require('./routes/apiRoutes');       // Optional public-facing API
 const adminRoutes = require('./routes/adminRoutes');   // Admin CRUD routes
 const authRoutes = require('./routes/authRoutes');     // Optional login route if separated
-
-const { authenticate } = require('./auth'); // JWT middleware
 
 // Static models
 const GlobalConfig = require('./models/globalConfigModel');
@@ -39,11 +39,18 @@ const runStartupTasks = async () => {
         // Seed DB if empty
         const configExists = await GlobalConfig.countDocuments();
         if (!configExists) {
+            console.log('No config found. Seeding database...');
             const img1 = await Image.create({ url: 'https://placehold.co/1280x720/1a1a1a/ffffff?text=Image+One', credit: 'First placeholder', duration: 5 });
             const img2 = await Image.create({ url: 'https://placehold.co/1280x720/333333/ffffff?text=Image+Two', credit: 'Second placeholder', duration: 10 });
 
-            await ImageList.create({ name: 'Default', images: [img1._id, img2._id] });
-            await GlobalConfig.create({}); // Default values in schema
+            // Create the default list first
+            const defaultList = await ImageList.create({ name: 'Default', images: [img1._id, img2._id] });
+
+            // Now create the global config and link the default list
+            await GlobalConfig.create({
+                activeSlideshowId: defaultList._id // <-- This is the important fix
+            });
+            console.log('Database seeded successfully.');
         }
     } catch (err) {
         console.warn('Startup tasks error:', err);
@@ -62,9 +69,11 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
 // Routes
+// Note: authRoutes is often not needed if login is part of adminRoutes
 app.use('/api', authRoutes);           // Optional
 app.use('/api', apiRoutes);            // Optional public API
 app.use('/api/admin', adminRoutes);    // Admin routes now internally handle JWT
+
 
 // Start server
 app.listen(PORT, () => {

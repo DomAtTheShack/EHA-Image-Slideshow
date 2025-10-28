@@ -1,15 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Section, Button, InputField } from './UIComponents';
 
-export default function ImageLibraryTab({ images = [], onAddImage, onUpdateImage, onDeleteImage, showNotification, API_URL }) {
+// FIX 1: Add 'apiKey' to the props list
+export default function ImageLibraryTab({
+                                            images = [],
+                                            onAddImage,
+                                            onUpdateImage,
+                                            onDeleteImage,
+                                            showNotification,
+                                            API_URL,
+                                            apiKey
+                                        }) {
     const [newImageData, setNewImageData] = useState({ url: '', credit: '', duration: 7 });
     const [editingImage, setEditingImage] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
 
-    // Add logging to see what images are being received
     useEffect(() => {
-        console.log("ImageLibraryTab received images:", images);
+        // This log is helpful, keep it if you want
+        // console.log("ImageLibraryTab received images:", images);
     }, [images]);
 
     const handleFormChange = (e, formSetter) => {
@@ -25,8 +34,24 @@ export default function ImageLibraryTab({ images = [], onAddImage, onUpdateImage
         const formData = new FormData();
         formData.append('imageFile', file);
         try {
-            const response = await fetch(`${API_URL}/admin/images/upload`, { method: 'POST', body: formData });
-            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || `Upload failed: ${response.statusText}`); }
+            // FIX 2: Add the 'headers' object with the 'Authorization' token
+            const response = await fetch(`${API_URL}/admin/images/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                // Handle auth error specifically
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Unauthorized. Your session may have expired.');
+                }
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+            }
+
             const result = await response.json();
             setNewImageData(prev => ({ ...prev, url: result.url }));
             showNotification('Image uploaded successfully!', 'success');
@@ -53,12 +78,19 @@ export default function ImageLibraryTab({ images = [], onAddImage, onUpdateImage
         setEditingImage(null);
     };
 
-    // Filter out any potentially invalid image entries BEFORE mapping
+    // This URL-fix logic is good.
+    const getSafeImageUrl = (url) => {
+        if (!url) return "https://placehold.co/96x64?text=No+URL";
+        if (url.startsWith('http')) return url;
+        // Construct the full URL for server-hosted images
+        const baseURL = API_URL.replace('/api', '');
+        return `${baseURL}${url}`;
+    }
+
     const validImages = Array.isArray(images) ? images.filter(img => img && typeof img === 'object' && img._id && img.url) : [];
     if (Array.isArray(images) && validImages.length !== images.length) {
         console.warn("ImageLibraryTab: Filtered out invalid image entries.", { original: images.length, valid: validImages.length });
     }
-
 
     return (
         <Section title="Image Library">
@@ -101,7 +133,7 @@ export default function ImageLibraryTab({ images = [], onAddImage, onUpdateImage
                             <div className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-4 flex-grow overflow-hidden">
                                     <img
-                                        src={image.url && image.url.startsWith('http') ? image.url : `${API_URL.replace('/api', '')}${image.url || ''}`}
+                                        src={getSafeImageUrl(image.url)}
                                         alt={image.credit || 'Image'}
                                         className="w-24 h-16 object-cover rounded flex-shrink-0"
                                         onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/96x64?text=Error"; }}
@@ -125,4 +157,3 @@ export default function ImageLibraryTab({ images = [], onAddImage, onUpdateImage
         </Section>
     );
 }
-

@@ -12,6 +12,7 @@ const Image = require('../models/imageModel');
 
 // Import weather functions (assuming weather.js is in the root backend folder)
 const { fetchWeatherData } = require('../weather.js');
+const {writeWeatherData} = require("../weather");
 
 // --- Multer Configuration for File Uploads ---
 // Ensure the upload directory exists
@@ -71,6 +72,7 @@ router.get('/display/data', async (req, res) => {
                     globalConfig.windSpeed = weatherData.current.wind_mph || 0;
                 }
             }
+            writeWeatherData(weatherData, globalConfig);
         } catch (weatherError) {
             console.warn("Could not fetch or update weather data:", weatherError.message);
             // Don't fail the whole request, just send potentially stale weather data
