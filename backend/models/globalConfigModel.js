@@ -17,6 +17,7 @@ const GlobalConfigSchema = new mongoose.Schema({
     condition: { type: String, default: 'Clear' },
     windSpeed: { type: Number, default: 0 },
     precipitation: { type: Number, default: 0 },
+    snowTotal: { type: Number, default: 0 },
     windChill: { type: Number, default: 0 },
     windDir: { type: String, default: 'N' },
     windDegree: { type: Number, default: 0 },

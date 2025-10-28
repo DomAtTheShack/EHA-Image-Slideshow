@@ -1,3 +1,6 @@
+/* In index.css */
+
+/* This keyframe is correct, you can leave it as-is */
 @keyframes ticker-scroll {
     0% {
         /* Start 100% off-screen to the right */
@@ -9,9 +12,38 @@
     }
 }
 
+/* --- REPLACE your old .animate-ticker with this: --- */
 .animate-ticker {
-    display: inline-block;
+    /* This makes the div's width fit its children (the text spans) */
+    display: inline-flex;
+
+    /* This ensures all text stays on one line */
     white-space: nowrap;
-    padding-right: 100vw;
+
+    /* This is the fix!
+      It pushes the text 100% of its *parent's* width to the right,
+      so it always starts off-screen and loops smoothly.
+    */
+    padding-left: 100%;
+
     animation: ticker-scroll 25s linear infinite;
+    z-index: 10;
+}
+
+
+/* --- These other classes are fine --- */
+.ticker-fade-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 25%;
+    height: 100%;
+    background: linear-gradient(to right, #000000 0%, rgba(0,0,0,0) 100%);
+    pointer-events: none;
+    z-index: 20;
+}
+
+.header-logo-area {
+    position: relative;
+    z-index: 30;
 }

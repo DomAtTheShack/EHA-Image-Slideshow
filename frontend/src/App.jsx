@@ -188,132 +188,148 @@ export default function App() {
     }
 
     return (
-        // --- LAYOUT CHANGE 1 ---
-        // Removed 'relative' from the main container. It's now a pure flex column.
-        <div className="w-screen h-screen bg-black text-white p-8 flex flex-col font-sans overflow-hidden">
+        // --- OUTER CONTAINER FOR FLOATING EFFECT ---
+        // This 'div' now has padding at the bottom (pb-8) to create the "floating" space.
+        // The overall height is still 'h-screen' so it takes up the full viewport.
+        <div className="w-screen h-screen bg-black text-white font-sans overflow-hidden flex flex-col pb-8">
 
-            {/* --- HEADER (No change) --- */}
-            <header className="flex justify-between items-center mb-6 flex-shrink-0">
-                <div className="flex items-center gap-6">
+            {/* --- MAIN CONTENT AREA (TOP) --- */}
+            {/* flex-1 allows this to grow and take up available space, pushing the footer down */}
+            <main className="flex-1 flex flex-row overflow-hidden p-8 pr-0 gap-8"> {/* Adjusted padding-right */}
+
+                {/* --- LEFT COLUMN (Time & Weather) --- */}
+                <div className="w-[375px] h-full flex-shrink-0 flex flex-col gap-8">
+
+                    {/* --- TOP-LEFT BOX (TIME/DATE) --- */}
+                    <aside className="bg-yellow-400 text-black p-6 rounded-2xl shadow-2xl flex-shrink-0">
+                        <div className="w-full pb-4 border-b border-black border-opacity-20">
+                            <h2 className="text-4xl font-semibold">{currentDate}</h2>
+                        </div>
+                        <div className="w-full pt-4">
+                            <h2 className="text-7xl font-mono text-center font-bold">{currentTime}</h2>
+                        </div>
+                    </aside>
+
+                    {/* --- BOTTOM-LEFT BOX (WEATHER) --- */}
+                    <aside className="bg-yellow-400 text-black p-6 rounded-2xl shadow-2xl flex-1 flex flex-col overflow-y-auto">
+                        <div className="w-full">
+                            <h2 className="text-3xl font-bold mb-4">Weather at {globalConfig.location}</h2>
+
+                            {/* Condition & Temp */}
+                            <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                                {weatherIcon}
+                                <div>
+                                    <h3 className="text-2xl font-semibold">{globalConfig.condition}</h3>
+                                    <p className="text-5xl font-bold">{globalConfig.temp}°{tempUnit}</p>
+                                </div>
+                            </div>
+
+                            {/* Windchill */}
+                            <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                                <WiThermometer className="text-5xl" />
+                                <div>
+                                    <h3 className="text-xl font-semibold">Windchill</h3>
+                                    <p className="text-3xl">{globalConfig.windChill}°{tempUnit}</p>
+                                </div>
+                            </div>
+
+                            {/* Seasonal Snowfall */}
+                            <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                                <WiSnow className="text-5xl" />
+                                <div>
+                                    <h3 className="text-xl font-semibold">Seasonal Snowfall</h3>
+                                    <p className="text-3xl">{globalConfig.snowTotal || 0} in</p>
+                                </div>
+                            </div>
+
+                            {/* Wind Speed & Direction */}
+                            <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                                <WiStrongWind
+                                    className="text-5xl transform"
+                                    style={{ transform: `rotate(${globalConfig.windDegree + 90}deg)` }}
+                                />
+                                <div>
+                                    <h3 className="text-xl font-semibold">Wind</h3>
+                                    <p className="text-3xl">
+                                        {globalConfig.windSpeed} {windUnit} • {globalConfig.windDir}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Precipitation */}
+                            <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
+                                <WiRain className="text-5xl" />
+                                <div>
+                                    <h3 className="text-xl font-semibold">Precipitation</h3>
+                                    <p className="text-3xl">{globalConfig.precipitation} {percipUnit}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                {/* --- RIGHT COLUMN (IMAGE SLIDESHOW) --- */}
+                <div className="flex-1 h-full relative pr-8"> {/* Added padding-right here too */}
+                    <div className="w-full h-full relative border-4 border-black rounded-2xl overflow-hidden">
+                        {imageList.images.map((image, index) => (
+                            <img
+                                key={image._id}
+                                src={image.url}
+                                alt={image.credit}
+                                className={`absolute top-0 left-0 w-full h-full object-contain transition-opacity duration-1000 ease-in-out ${
+                                    index === currentIndex ? 'opacity-100' : 'opacity-0'
+                                }`}
+                            />
+                        ))}
+                        <div className="absolute top-0 left-0 text-3xl font-medium bg-black bg-opacity-60 px-4 py-2 rounded-lg z-10">
+                            {currentImage?.credit}
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            {/* --- TICKER FOOTER --- */}
+            <footer className="h-24 bg-black flex-shrink-0 flex items-center overflow-visible border-4 border-gray-400 rounded-r-2xl -ml-2 mr-8 relative">
+
+                {/* --- TICKER SCROLL AREA (The Clipping Mask) --- */}
+                <div className="flex-1 h-full relative overflow-hidden pr-40">
+                    {/* FADE EFFECT ON LEFT SIDE */}
+                    <div className="absolute left-0 top-0 h-full w-24 z-10 bg-gradient-to-r from-black to-transparent"></div>
+
+                    {/* --- VERTICALLY CENTRED & SMOOTH-SCROLLING TICKER TEXT --- */}
+                    {/*
+                      - 'animate-ticker' is now defined in CSS to get its width from its children (inline-flex)
+                      - 'flex items-center' will now correctly vertically centre the text
+                      - Removed 'absolute inset-0' and 'translate-y-5'
+                    */}
+                    <div className="animate-ticker h-full flex items-center text-6xl font-bold tracking-wide whitespace-nowrap leading-none">
+                        {(globalConfig.events && globalConfig.events.length > 0) ? (
+                            globalConfig.events.map((event, index) => (
+                                <React.Fragment key={index}>
+                                <span className="mx-16">
+                                    {event}
+                                </span>
+                                    {/* Removed 'translate-y-[0.2rem]' for correct alignment */}
+                                    {index < globalConfig.events.length - 1 && (
+                                        <span className="text-white text-7xl font-bold align-middle mx-2">•</span>
+                                    )}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <span className="mx-16">Welcome to Michigan Tech!</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* --- LOGO (Bottom-Right, Overlapping Outside Container) --- */}
+                <div className="absolute right-0 bottom-0 top-0 flex items-center justify-center z-20 pointer-events-none">
                     <img
                         src="https://www.mtu.edu/mtu_resources/images/download-central/logos/husky-icon/full-color.png"
                         alt="MTU Logo"
-                        className="h-12 scale-150"
+                        className="h-32 translate-x-8 drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                     />
-                    <h1 className="text-5xl font-bold tracking-wide">{globalConfig.title}</h1>
-                </div>
-                <div className="text-5xl font-mono text-right">{currentTime}</div>
-            </header>
-
-            {/* --- LAYOUT CHANGE 2 ---
-                - 'flex-grow' makes this 'main' section fill all available space.
-                - 'overflow-hidden' stops its children from breaking the layout.
-                - Removed fixed height 'h-[calc(100%-150px)]'.
-            */}
-            <main className="flex-grow flex gap-8 overflow-hidden">
-
-                {/* --- LAYOUT CHANGE 3 ---
-                    - Removed 'justify-center' to align the image to the top.
-                */}
-                <div className="flex-1 flex flex-col items-center h-full relative">
-                    {imageList.images.map((image, index) => (
-                        <img
-                            key={image._id}
-                            src={image.url}
-                            alt={image.credit}
-                            className={`absolute top-0 left-0 w-full h-full object-contain transition-opacity duration-1000 ease-in-out ${
-                                index === currentIndex ? 'opacity-100' : 'opacity-0'
-                            }`}
-                        />
-                    ))}
-                    {/* This credit is now safe from the ticker */}
-                    <div className="absolute bottom-4 left-4 text-3xl font-medium bg-black bg-opacity-60 px-4 py-2 rounded-lg">
-                        {currentImage?.credit}
-                    </div>
                 </div>
 
-                {/* --- SIDEBAR (No change to contents) ---
-                    This will now automatically stretch to the full height of the 'main' container.
-                */}
-                <aside className="w-[375px] bg-yellow-400 text-black p-6 rounded-2xl flex flex-col gap-4 shadow-2xl overflow-y-auto">
-                    {/* Date */}
-                    <div className="w-full pb-4 border-b border-black border-opacity-20">
-                        <h2 className="text-4xl font-semibold">{currentDate}</h2>
-                    </div>
-
-                    <div className="w-full">
-                        <h2 className="text-3xl font-bold mb-4">Weather in {globalConfig.location}</h2>
-
-                        {/* Condition & Temp (New Layout) */}
-                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            {weatherIcon}
-                            <div>
-                                <h3 className="text-2xl font-semibold">{globalConfig.condition}</h3>
-                                <p className="text-5xl font-bold">{globalConfig.temp}°{tempUnit}</p>
-                            </div>
-                        </div>
-
-                        {/* Windchill */}
-                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiThermometer className="text-5xl" />
-                            <div>
-                                <h3 className="text-xl font-semibold">Windchill</h3>
-                                <p className="text-3xl">{globalConfig.windChill}°{tempUnit}</p>
-                            </div>
-                        </div>
-
-                        {/* Seasonal Snowfall */}
-                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiSnow className="text-5xl" />
-                            <div>
-                                <h3 className="text-xl font-semibold">Seasonal Snowfall</h3>
-                                <p className="text-3xl">{globalConfig.seasonalSnowfall || 0} {percipUnit}</p>
-                            </div>
-                        </div>
-
-                        {/* Wind Speed & Direction */}
-                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiStrongWind
-                                className="text-5xl transform"
-                                style={{ transform: `rotate(${globalConfig.windDegree + 90}deg)` }}
-                            />
-                            <div>
-                                <h3 className="text-xl font-semibold">Wind</h3>
-                                <p className="text-3xl">
-                                    {globalConfig.windSpeed} {windUnit} • {globalConfig.windDir}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Precipitation */}
-                        <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                            <WiRain className="text-5xl" />
-                            <div>
-                                <h3 className="text-xl font-semibold">Precipitation</h3>
-                                <p className="text-3xl">{globalConfig.precipitation} {percipUnit}</p>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-            </main>
-
-            {/* --- LAYOUT CHANGE 4 ---
-                - Removed 'absolute' positioning.
-                - Added 'flex-shrink-0' so it doesn't shrink.
-                - Added 'mt-6' margin to create space between it and the 'main' content.
-            */}
-            <footer className="h-16 bg-black bg-opacity-90 flex items-center overflow-hidden border-t-2 border-yellow-400 flex-shrink-0 mt-6">
-                <div className="animate-ticker text-3xl font-semibold">
-                    {(globalConfig.events && globalConfig.events.length > 0) ? (
-                        globalConfig.events.map((event, index) => (
-                            <span key={index} className="mx-12">
-                                {event}
-                            </span>
-                        ))
-                    ) : (
-                        <span className="mx-12">Welcome to Michigan Tech!</span>
-                    )}
-                </div>
             </footer>
         </div>
     );
