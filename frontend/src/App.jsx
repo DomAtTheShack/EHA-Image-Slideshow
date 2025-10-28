@@ -69,7 +69,8 @@ export default function App() {
     // ---------------------------------------------------------------------------------------------
     const fetchData = useCallback(async () => {
         try {
-            const response = await fetch('/api/display/data');
+            const apiUrl = process.env.REACT_APP_API_URL;
+            const response = await fetch(`${apiUrl}/display/data`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
