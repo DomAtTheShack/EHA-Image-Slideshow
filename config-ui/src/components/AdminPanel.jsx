@@ -17,7 +17,7 @@ export default function AdminPanel() {
     const [loginModal, setLoginModal] = useState({ show: !apiKey, password: '' });
     const passwordInputRef = useRef(null);
 
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+    const API_URL = process.env.REACT_APP_API_URL;
 
     // --- Notifications ---
     const addNotification = (message, type = 'success') => {
