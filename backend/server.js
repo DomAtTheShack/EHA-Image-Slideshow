@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 5001;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/userImages', express.static(path.join(__dirname, 'userImages')));
+// 1. REMOVED the redundant static route from here.
 
 // --- Startup tasks ---
 const runStartupTasks = async () => {
@@ -69,10 +69,12 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
 // Routes
-// Note: authRoutes is often not needed if login is part of adminRoutes
-app.use('/api', authRoutes);           // Optional
-app.use('/api', apiRoutes);            // Optional public API
-app.use('/api/admin', adminRoutes);    // Admin routes now internally handle JWT
+// 2. FIXED this line to point to the correct physical folder 'userImages'
+app.use('/api/userImages', express.static(path.join(__dirname, 'userImages'))); // <-- This is the fix
+
+app.use('/api', authRoutes);         // Optional
+app.use('/api', apiRoutes);          // Optional public API
+app.use('/api/admin', adminRoutes);  // Admin routes now internally handle JWT
 
 
 // Start server

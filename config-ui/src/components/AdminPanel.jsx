@@ -17,7 +17,7 @@ export default function AdminPanel() {
     const [loginModal, setLoginModal] = useState({ show: !apiKey, password: '' });
     const passwordInputRef = useRef(null);
 
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+    const API_URL = process.env.REACT_APP_API_URL;
 
     // --- Notifications ---
     const addNotification = (message, type = 'success') => {
@@ -32,6 +32,7 @@ export default function AdminPanel() {
         localStorage.removeItem('adminToken');
         setLoginModal({ show: true, password: '' });
         setData({ globalConfig: null, imageLists: [], images: [] });
+        //logoutAPI();
     };
 
     // --- Fetch admin data ---
@@ -66,6 +67,22 @@ export default function AdminPanel() {
         }
     };
 
+    const logoutAPI = async () => {
+        e.preventDefault();
+        try {
+            const res = await fetch('/api/admin/logout', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+                body: JSON.stringify({apiKey})
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data.msg || 'Logout failed');
+            }
+        } catch (err) {
+            setError('Network error');
+        }
+    };
     useEffect(() => {
         if (apiKey) {
             localStorage.setItem('adminToken', apiKey);

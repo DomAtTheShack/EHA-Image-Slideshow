@@ -58,6 +58,18 @@ router.get('/data', authenticate, async (req, res) => {
     }
 });
 
+// router.get('/logout', authenticate, async (req, res) => {
+//     try {
+//         const key = req.body;
+//         if(jwt.remove)
+//         res.json({ loggedOut: True });
+//     } catch (err) {
+//         console.error('Error fetching admin data:', err.message);
+//         res.status(500).send('Server Error');
+//     }
+// });
+
+
 // Update global config
 router.put('/global-config', authenticate, async (req, res) => {
     try {
