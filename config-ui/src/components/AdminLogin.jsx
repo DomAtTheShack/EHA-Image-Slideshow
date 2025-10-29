@@ -1,4 +1,3 @@
-// AdminLogin.jsx (React example)
 import React, { useState } from 'react';
 
 export default function AdminLogin({ onLogin }) {
@@ -23,6 +22,7 @@ export default function AdminLogin({ onLogin }) {
             setError('Network error');
         }
     };
+
 
     return (
         <div className="login-modal">
