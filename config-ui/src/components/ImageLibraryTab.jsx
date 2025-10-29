@@ -82,9 +82,7 @@ export default function ImageLibraryTab({
     const getSafeImageUrl = (url) => {
         if (!url) return "https://placehold.co/96x64?text=No+URL";
         if (url.startsWith('http')) return url;
-        // Construct the full URL for server-hosted images
-        const baseURL = API_URL.replace('/api', '');
-        return `${baseURL}${url}`;
+        return `${API_URL}${url}`;
     }
 
     const validImages = Array.isArray(images) ? images.filter(img => img && typeof img === 'object' && img._id && img.url) : [];

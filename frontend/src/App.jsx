@@ -175,6 +175,20 @@ export default function App() {
     // RENDER LOGIC (Main component)
     // ---------------------------------------------------------------------------------------------
 
+    // ==========================================================
+    // --- THIS IS THE FIX ---
+    // This helper checks if the URL is absolute or local
+    // ==========================================================
+    const getImageUrl = (url) => {
+        if (!url) return '';
+        // If it's already a full URL, just return it
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        // Otherwise, it's a local path, so prepend the API URL
+        return `${process.env.REACT_APP_API_URL}${url}`;
+    };
+
     const currentImage = imageList.images[currentIndex];
     const weatherIcon = getWeatherIcon(globalConfig.condition);
 
@@ -190,12 +204,9 @@ export default function App() {
 
     return (
         // --- OUTER CONTAINER FOR FLOATING EFFECT ---
-        // This 'div' now has padding at the bottom (pb-8) to create the "floating" space.
-        // The overall height is still 'h-screen' so it takes up the full viewport.
         <div className="w-screen h-screen bg-black text-white font-sans overflow-hidden flex flex-col pb-8">
 
             {/* --- MAIN CONTENT AREA (TOP) --- */}
-            {/* flex-1 allows this to grow and take up available space, pushing the footer down */}
             <main className="flex-1 flex flex-row overflow-hidden p-8 pr-0 gap-8"> {/* Adjusted padding-right */}
 
                 {/* --- LEFT COLUMN (Time & Weather) --- */}
@@ -276,9 +287,10 @@ export default function App() {
                             <img
                                 key={image._id}
                                 // ==========================================================
-                                // THIS IS THE FIX: Prepending the API URL
+                                // --- THIS IS THE FIX ---
+                                // We now use the helper function to build the correct URL
                                 // ==========================================================
-                                src={`${process.env.REACT_APP_API_URL}${image.url}`}
+                                src={getImageUrl(image.url)}
                                 alt={image.credit}
                                 className={`absolute top-0 left-0 w-full h-full object-contain transition-opacity duration-1000 ease-in-out ${
                                     index === currentIndex ? 'opacity-100' : 'opacity-0'
@@ -292,28 +304,37 @@ export default function App() {
                 </div>
             </main>
 
-            {/* --- TICKER FOOTER --- */}
+            {/* --- TICKER FOOTER (No changes from here down) --- */}
             <footer className="h-24 bg-black flex-shrink-0 flex items-center overflow-visible border-4 border-gray-400 rounded-r-2xl -ml-2 mr-8 relative">
 
-                {/* --- TICKER SCROLL AREA (The Clipping Mask) --- */}
                 <div className="flex-1 h-full relative overflow-hidden pr-40">
-                    {/* FADE EFFECT ON LEFT SIDE */}
-                    <div className="absolute left-0 top-0 h-full w-24 z-10 bg-gradient-to-r from-black to-transparent"></div>
+                    <div className="absolute left-0 top-0 h-full w-24 z-20 bg-gradient-to-r from-black to-transparent pointer-events-none"></div>
 
-                    {/* --- VERTICALLY CENTRED & SMOOTH-SCROLLING TICKER TEXT --- */}
-                    {/*
-                      - 'animate-ticker' is now defined in CSS to get its width from its children (inline-flex)
-                      - 'flex items-center' will now correctly vertically centre the text
-                      - Removed 'absolute inset-0' and 'translate-y-5'
-                    */}
-                    <div className="animate-ticker h-full flex items-center text-6xl font-bold tracking-wide whitespace-nowrap leading-none">
+                    <div className="animate-ticker z-10 h-full flex items-center text-6xl font-bold tracking-wide whitespace-nowrap leading-none">
+
+                        {/* --- FIRST COPY --- */}
                         {(globalConfig.events && globalConfig.events.length > 0) ? (
                             globalConfig.events.map((event, index) => (
-                                <React.Fragment key={index}>
+                                <React.Fragment key={`first-${index}`}>
                                 <span className="mx-16">
                                     {event}
                                 </span>
-                                    {/* Removed 'translate-y-[0.2rem]' for correct alignment */}
+                                    {index < globalConfig.events.length - 1 && (
+                                        <span className="text-white text-7xl font-bold align-middle mx-2">•</span>
+                                    )}
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <span className="mx-16">Welcome to Michigan Tech!</span>
+                        )}
+
+                        {/* --- SECOND COPY (Identical) --- */}
+                        {(globalConfig.events && globalConfig.events.length > 0) ? (
+                            globalConfig.events.map((event, index) => (
+                                <React.Fragment key={`second-${index}`}>
+                                <span className="mx-16">
+                                    {event}
+                                </span>
                                     {index < globalConfig.events.length - 1 && (
                                         <span className="text-white text-7xl font-bold align-middle mx-2">•</span>
                                     )}
@@ -325,8 +346,7 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* --- LOGO (Bottom-Right, Overlapping Outside Container) --- */}
-                <div className="absolute right-0 bottom-0 top-0 flex items-center justify-center z-20 pointer-events-none">
+                <div className="absolute right-0 bottom-0 top-0 flex items-center justify-center z-30 pointer-events-none">
                     <img
                         src="https://www.mtu.edu/mtu_resources/images/download-central/logos/husky-icon/full-color.png"
                         alt="MTU Logo"
