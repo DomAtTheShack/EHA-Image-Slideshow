@@ -114,7 +114,7 @@ export default function SlideshowsTab({
                                             <button onClick={() => moveImage(i, -1)} disabled={i===0} className="p-1 rounded text-gray-300 hover:bg-gray-700 disabled:opacity-30"><ArrowUp /></button>
                                             <button onClick={() => moveImage(i, 1)} disabled={i===imagesInSelectedList.length-1} className="p-1 rounded text-gray-300 hover:bg-gray-700 disabled:opacity-30"><ArrowDown /></button>
                                         </div>
-                                        <img src={img.url?.startsWith('http') ? img.url : `${API_URL.replace('/api','')}${img.url||''}`} alt={img.credit||'Image'} className="w-16 h-10 object-cover rounded mr-4 flex-shrink-0" onError={e=>{e.target.onerror=null;e.target.src="https://placehold.co/64x40?text=Error"}}/>
+                                        <img src={img.url?.startsWith('http') ? img.url : `${API_URL}${img.url||''}`} alt={img.credit||'Image'} className="w-16 h-10 object-cover rounded mr-4 flex-shrink-0" onError={e=>{e.target.onerror=null;e.target.src="https://placehold.co/64x40?text=Error"}}/>
                                         <span className="truncate text-gray-100">{img.credit||'No credit'}</span>
                                         <span className="text-xs text-gray-400 ml-2">({img.duration}s)</span>
                                     </div>
@@ -133,7 +133,7 @@ export default function SlideshowsTab({
                             {imagesNotInSelectedList.map(img => (
                                 <div key={img._id} className="flex items-center justify-between p-2 rounded bg-gray-600 hover:bg-gray-500 transition-colors">
                                     <div className="flex items-center flex-grow overflow-hidden mr-4">
-                                        <img src={img.url?.startsWith('http') ? img.url : `${API_URL.replace('/api','')}${img.url||''}`} alt={img.credit||'Image'} className="w-16 h-10 object-cover rounded mr-4 flex-shrink-0" onError={e=>{e.target.onerror=null;e.target.src="https://placehold.co/64x40?text=Error"}}/>
+                                        <img src={img.url?.startsWith('http') ? img.url : `${API_URL}${img.url||''}`} alt={img.credit||'Image'} className="w-16 h-10 object-cover rounded mr-4 flex-shrink-0" onError={e=>{e.target.onerror=null;e.target.src="https://placehold.co/64x40?text=Error"}}/>
                                         <span className="truncate text-gray-100">{img.credit||'No credit'}</span>
                                     </div>
                                     <Button onClick={() => addImage(img._id)} color="blue" className="flex-shrink-0 text-xs px-2 py-1">Add</Button>
