@@ -304,21 +304,21 @@ export default function App() {
                 </div>
             </main>
 
-            {/* --- TICKER FOOTER (No changes from here down) --- */}
+            {/* --- TICKER FOOTER --- */}
             <footer className="h-24 bg-black flex-shrink-0 flex items-center overflow-visible border-4 border-gray-400 rounded-r-2xl -ml-2 mr-8 relative">
 
+                {/* This div is already 'relative', which is perfect. */}
                 <div className="flex-1 h-full relative overflow-hidden pr-40">
                     <div className="absolute left-0 top-0 h-full w-24 z-20 bg-gradient-to-r from-black to-transparent pointer-events-none"></div>
+                    <div className="animate-ticker absolute w-max z-10 h-full flex items-center text-6xl font-bold tracking-wide whitespace-nowrap leading-none">
 
-                    <div className="animate-ticker z-10 h-full flex items-center text-6xl font-bold tracking-wide whitespace-nowrap leading-none">
-
-                        {/* --- FIRST COPY --- */}
+                        {/* --- ONLY ONE COPY --- */}
                         {(globalConfig.events && globalConfig.events.length > 0) ? (
                             globalConfig.events.map((event, index) => (
                                 <React.Fragment key={`first-${index}`}>
-                                <span className="mx-16">
-                                    {event}
-                                </span>
+                        <span className="mx-16">
+                            {event}
+                        </span>
                                     {index < globalConfig.events.length - 1 && (
                                         <span className="text-white text-7xl font-bold align-middle mx-2">•</span>
                                     )}
