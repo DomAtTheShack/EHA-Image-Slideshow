@@ -327,22 +327,6 @@ export default function App() {
                         ) : (
                             <span className="mx-16">Welcome to Michigan Tech!</span>
                         )}
-
-                        {/* --- SECOND COPY (Identical) --- */}
-                        {(globalConfig.events && globalConfig.events.length > 0) ? (
-                            globalConfig.events.map((event, index) => (
-                                <React.Fragment key={`second-${index}`}>
-                                <span className="mx-16">
-                                    {event}
-                                </span>
-                                    {index < globalConfig.events.length - 1 && (
-                                        <span className="text-white text-7xl font-bold align-middle mx-2">•</span>
-                                    )}
-                                </React.Fragment>
-                            ))
-                        ) : (
-                            <span className="mx-16">Welcome to Michigan Tech!</span>
-                        )}
                     </div>
                 </div>
 
