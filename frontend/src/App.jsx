@@ -210,7 +210,7 @@ export default function App() {
             <main className="flex-1 flex flex-row overflow-hidden p-8 pr-0 gap-8"> {/* Adjusted padding-right */}
 
                 {/* --- LEFT COLUMN (Time & Weather) --- */}
-                <div className="w-[375px] h-full flex-shrink-0 flex flex-col gap-8">
+                <div className="w-[375px] h-full flex-shrink-0 flex flex-col gap-[20px]">
 
                     {/* --- TOP-LEFT BOX (TIME/DATE) --- */}
                     <aside className="bg-yellow-400 text-black p-6 rounded-2xl shadow-2xl flex-shrink-0">
