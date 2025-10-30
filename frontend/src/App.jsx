@@ -60,7 +60,7 @@ export default function App() {
     const [currentTime, setCurrentTime] = useState(formatTime(new Date()));
     const [currentDate, setCurrentDate] = useState(formatDate(new Date()));
     const [error, setError] = useState(null);
-    let percipUnit = "mm";
+    let visUnit = "km";
     let windUnit = "km/h";
     let tempUnit = "C";
 
@@ -193,11 +193,11 @@ export default function App() {
     const weatherIcon = getWeatherIcon(globalConfig.condition);
 
     if(globalConfig.unitSystem === "metric"){
-        percipUnit = "mm";
+        visUnit = "km";
         windUnit = "km/h";
         tempUnit = "C";
     }else{
-        percipUnit = "in";
+        visUnit = "miles";
         windUnit = "mph";
         tempUnit = "F";
     }
@@ -270,10 +270,10 @@ export default function App() {
 
                             {/* Precipitation */}
                             <div className="mb-4 flex items-center gap-4 p-4 bg-black bg-opacity-10 rounded-xl">
-                                <WiRain className="text-5xl" />
+                                <WiFog className="text-5xl" />
                                 <div>
-                                    <h3 className="text-xl font-semibold">Precipitation</h3>
-                                    <p className="text-3xl">{globalConfig.precipitation} {percipUnit}</p>
+                                    <h3 className="text-xl font-semibold">Visibility</h3>
+                                    <p className="text-3xl">{globalConfig.visibility} {visUnit}</p>
                                 </div>
                             </div>
                         </div>
@@ -287,7 +287,6 @@ export default function App() {
                             <img
                                 key={image._id}
                                 // ==========================================================
-                                // --- THIS IS THE FIX ---
                                 // We now use the helper function to build the correct URL
                                 // ==========================================================
                                 src={getImageUrl(image.url)}

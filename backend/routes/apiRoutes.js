@@ -58,14 +58,15 @@ router.get('/display/data', async (req, res) => {
                 globalConfig.condition = weatherData.current.condition?.text || 'N/A';
                 globalConfig.windDir = weatherData.current.wind_dir || 'N/A';
                 globalConfig.windDegree = weatherData.current.wind_degree || 0;
+                globalConfig.humid = weatherData.current.humidity || 0;
 
                 if(globalConfig.unitSystem === "metric") {
-                    globalConfig.precipitation = weatherData.current.precip_mm || 0;
+                    globalConfig.visibility = weatherData.current.vis_km || 0;
                     globalConfig.temp = weatherData.current.temp_c || 0;
                     globalConfig.windChill = weatherData.current.feelslike_c || 0;
                     globalConfig.windSpeed = weatherData.current.wind_kph || 0;
                 } else {
-                    globalConfig.precipitation = weatherData.current.precip_in || 0;
+                    globalConfig.visibility = weatherData.current.vis_miles || 0;
                     globalConfig.temp = weatherData.current.temp_f || 0;
                     globalConfig.windChill = weatherData.current.feelslike_f || 0;
                     globalConfig.windSpeed = weatherData.current.wind_mph || 0;
@@ -73,6 +74,7 @@ router.get('/display/data', async (req, res) => {
             }
             const total = await getSnowfallTotal();
             globalConfig.snowTotal = total || 0;
+            writeWeatherData(weatherData, globalConfig);
         } catch (weatherError) {
             console.warn("Could not fetch or update weather data:", weatherError.message);
             // Don't fail the whole request, just send potentially stale weather data
