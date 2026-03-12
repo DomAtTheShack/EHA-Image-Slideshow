@@ -1,6 +1,12 @@
-Digital Signage CMS Project
-This project contains the complete setup for a digital signage content management system. It's split into two main parts: a React frontend for the display and a Node.js/Express backend for content management.
-Project Structure
+# Digital Signage CMS Project
+
+This project contains the complete setup for a digital signage content management system. It is split into two main parts: a React frontend for the display and a Node.js/Express backend for content management.
+
+---
+
+## Project Structure
+
+```text
 .
 ├── backend/              # Node.js API
 │   ├── models/
@@ -22,6 +28,7 @@ Project Structure
 │   └── package.json
 │
 └── README.md             # This file
+```
 
 
 ## Getting Started
